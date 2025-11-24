@@ -109,24 +109,7 @@
  <resources>
   <include location="resources.qrc"/>
  </resources>
- <connections>
-  <connection>
-   <sender>btnDown</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>demo()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>196</x>
-     <y>80</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>293</x>
-     <y>134</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
  <slots>
   <slot>demo()</slot>
  </slots>
