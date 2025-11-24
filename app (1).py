@@ -1,4 +1,4 @@
-# app.py — Radar circulaire + degrés + altitudes (couleur avion) + collisions
+# app.py — Radar circulaire + degrés + altitudes (couleur avion) + collisions + boutons altitude
 import sys, math, random
 from dataclasses import dataclass
 
@@ -22,7 +22,7 @@ ALT_COLORS = {
 
 
 def tint_pixmap(pixmap: QPixmap, color: QColor) -> QPixmap:
-    """Retourne une copie du pixmap teintée par la couleur donnée."""
+    """Retourne une copie du pixmap teintée."""
     tinted = QPixmap(pixmap.size())
     tinted.fill(Qt.transparent)
 
@@ -52,35 +52,46 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        # récupérer la vue dans l'UI (radarView OU graphicsView)
+        # 1) récupérer la vue dans l'UI (radarView OU graphicsView)
         self.view: QGraphicsView | None = getattr(self.ui, "radarView", None) or getattr(self.ui, "graphicsView", None)
         if self.view is None:
             raise RuntimeError("Aucune QGraphicsView trouvée ('radarView' ou 'graphicsView').")
 
-        # scène
+        # 2) scène
         self.scene = QGraphicsScene(self)
         self.view.setScene(self.scene)
 
-        # taille scène
         self.W, self.H = 800, 600
         self.scene.setSceneRect(0, 0, self.W, self.H)
 
-        # centre et rayon radar
         self.cx, self.cy = self.W / 2, self.H / 2
         self.R = min(self.W, self.H) * 0.42
 
-        # radar
+        # 3) radar
         self.draw_radar()
 
-        # avions
+        # 4) avions
         self.planes: list[QGraphicsPixmapItem] = []
         self.states: list[PlaneState] = []
         self.make_planes(n=6)
 
-        # collisions
-        self.collision_dist = 18.0  # adapte si besoin (px). Avec scale=0.05, 15–25 est bien.
+        # sélection
+        self.selected_index = None
 
-        # timer
+        # collisions (avec scale=0.05, 12–25 est pas mal)
+        self.collision_dist = 18.0
+
+        # 5) connecter boutons altitude (doivent exister dans demo.ui)
+        if hasattr(self.ui, "btnUp"):
+            self.ui.btnUp.clicked.connect(self.altitude_up)
+        if hasattr(self.ui, "btnDown"):
+            self.ui.btnDown.clicked.connect(self.altitude_down)
+
+        # si tu as encore pushButton -> demo() dans Designer, ça évite l’erreur
+        # (sinon, ça ne fait rien)
+        # rien à connecter ici car ui_demo.py fait déjà la connexion
+
+        # 6) timer simu
         self.clock = QElapsedTimer()
         self.clock.start()
 
@@ -91,25 +102,21 @@ class MainWindow(QMainWindow):
 
     # ---------- RADAR ----------
     def draw_radar(self):
-        # cercle principal
         bg = QGraphicsEllipseItem(self.cx - self.R, self.cy - self.R, 2 * self.R, 2 * self.R)
         bg.setPen(QPen(Qt.white, 2))
         bg.setBrush(QBrush(Qt.black))
         self.scene.addItem(bg)
 
-        # cercles internes
         for k in range(1, 4):
             r = self.R * k / 4
             c = QGraphicsEllipseItem(self.cx - r, self.cy - r, 2 * r, 2 * r)
             c.setPen(QPen(Qt.darkGray, 1, Qt.DashLine))
             self.scene.addItem(c)
 
-        # axes
         axis_pen = QPen(Qt.gray, 1)
         self.scene.addLine(self.cx - self.R, self.cy, self.cx + self.R, self.cy, axis_pen)
         self.scene.addLine(self.cx, self.cy - self.R, self.cx, self.cy + self.R, axis_pen)
 
-        # ticks + labels degrés
         tick_pen = QPen(Qt.lightGray, 1)
         font = QFont("Segoe UI", 9)
 
@@ -139,6 +146,13 @@ class MainWindow(QMainWindow):
         for _ in range(n):
             self.add_one_plane()
 
+    def recolor_plane(self, idx: int):
+        """Re-teinte l'avion selon son altitude."""
+        st = self.states[idx]
+        base_pix = QPixmap(":/img/plane.png")
+        tinted = tint_pixmap(base_pix, ALT_COLORS[st.altitude])
+        self.planes[idx].setPixmap(tinted)
+
     def add_one_plane(self):
         base_pix = QPixmap(":/img/plane.png")
         if base_pix.isNull():
@@ -146,16 +160,16 @@ class MainWindow(QMainWindow):
 
         # altitude aléatoire
         alt = random.choice([1, 2, 3])
-        color = ALT_COLORS[alt]
+        tinted_pix = tint_pixmap(base_pix, ALT_COLORS[alt])
 
-        # pixmap teinté
-        tinted_pix = tint_pixmap(base_pix, color)
-
-        # avion
         item = QGraphicsPixmapItem(tinted_pix)
         item.setScale(0.05)  # <<< taille demandée
         item.setTransformOriginPoint(item.boundingRect().center())
         self.scene.addItem(item)
+
+        # rendre sélectionnable par clic
+        item.setFlag(QGraphicsPixmapItem.ItemIsSelectable, True)
+        item.setAcceptedMouseButtons(Qt.LeftButton)
 
         # position aléatoire dans le cercle
         angle = random.uniform(0, 2 * math.pi)
@@ -168,6 +182,39 @@ class MainWindow(QMainWindow):
 
         self.planes.append(item)
         self.states.append(PlaneState(x=x, y=y, heading_deg=heading, speed=speed, altitude=alt))
+
+    # ---------- SELECTION ----------
+    def update_selected_plane(self):
+        """Trouve l'avion sélectionné dans la scène."""
+        self.selected_index = None
+        for i, item in enumerate(self.planes):
+            if item.isSelected():
+                self.selected_index = i
+                return
+
+    def altitude_up(self):
+        self.update_selected_plane()
+        if self.selected_index is None:
+            self.statusBar().showMessage("Sélectionne un avion d'abord", 1200)
+            return
+
+        st = self.states[self.selected_index]
+        if st.altitude < 3:
+            st.altitude += 1
+            self.recolor_plane(self.selected_index)
+            self.statusBar().showMessage(f"Altitude avion -> {st.altitude}", 1000)
+
+    def altitude_down(self):
+        self.update_selected_plane()
+        if self.selected_index is None:
+            self.statusBar().showMessage("Sélectionne un avion d'abord", 1200)
+            return
+
+        st = self.states[self.selected_index]
+        if st.altitude > 1:
+            st.altitude -= 1
+            self.recolor_plane(self.selected_index)
+            self.statusBar().showMessage(f"Altitude avion -> {st.altitude}", 1000)
 
     # ---------- COLLISIONS ----------
     def handle_collisions(self):
@@ -209,6 +256,9 @@ class MainWindow(QMainWindow):
         if dt <= 0:
             return
 
+        # mettre à jour la sélection
+        self.update_selected_plane()
+
         # mouvement
         for item, st in zip(self.planes, self.states):
             rad = math.radians(st.heading_deg)
@@ -238,7 +288,6 @@ class MainWindow(QMainWindow):
 
             st.x, st.y = nx, ny
 
-            # afficher avion centré + rotation
             b = item.boundingRect()
             item.setPos(st.x - b.width() / 2, st.y - b.height() / 2)
             item.setRotation(st.heading_deg)
@@ -246,10 +295,10 @@ class MainWindow(QMainWindow):
         # collisions après déplacement
         self.handle_collisions()
 
-    # ---------- SLOT BOUTON ----------
+    # ---------- SLOT BOUTON DESIGNER ----------
     @Slot()
     def demo(self):
-        # bouton designer -> ajouter un avion
+        """Si pushButton.clicked -> MainWindow.demo() existe dans ui_demo.py."""
         self.add_one_plane()
         self.statusBar().showMessage("Nouvel avion ajouté", 1200)
 
