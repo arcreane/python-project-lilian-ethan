@@ -117,7 +117,7 @@ class MainWindow(QMainWindow):
             raise RuntimeError("Image :/img/plane.png introuvable dans resources.qrc")
 
         item = QGraphicsPixmapItem(pix)
-        item.setScale(0.35)  # taille avion
+        item.setScale(0.05)  # taille avion
         item.setTransformOriginPoint(item.boundingRect().center())
         self.scene.addItem(item)
 

@@ -12,7 +12,7 @@ img = QLabel()
 img_path = Path(__file__).with_name("plane.png")
 img.setPixmap(QPixmap(str(img_path)))
 img.setScaledContents(True)       # l’image s’adapte
-img.resize(300, 200)
+img.resize(50, 100)
 img.setAlignment(Qt.AlignCenter)
 img.show()
 
