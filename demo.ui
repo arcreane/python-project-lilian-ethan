@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>416</width>
-    <height>219</height>
+    <width>900</width>
+    <height>726</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,14 +17,46 @@
    <widget class="QPushButton" name="pushButton">
     <property name="geometry">
      <rect>
-      <x>140</x>
+      <x>30</x>
       <y>40</y>
       <width>79</width>
-      <height>24</height>
+      <height>31</height>
      </rect>
     </property>
     <property name="text">
      <string>PushButton</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="planeLabel">
+    <property name="geometry">
+     <rect>
+      <x>160</x>
+      <y>20</y>
+      <width>121</width>
+      <height>91</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="pixmap">
+     <pixmap resource="resources.qrc">:/img/plane.png</pixmap>
+    </property>
+    <property name="scaledContents">
+     <bool>true</bool>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignCenter</set>
+    </property>
+   </widget>
+   <widget class="QGraphicsView" name="radarView">
+    <property name="geometry">
+     <rect>
+      <x>-15</x>
+      <y>-29</y>
+      <width>911</width>
+      <height>711</height>
+     </rect>
     </property>
    </widget>
   </widget>
@@ -33,14 +65,16 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>416</width>
+     <width>900</width>
      <height>33</height>
     </rect>
    </property>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
- <resources/>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>pushButton</sender>
