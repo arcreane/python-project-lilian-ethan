@@ -126,7 +126,7 @@ class MainWindow(QMainWindow):
             safe_disconnect(btn_right.clicked)
             btn_right.clicked.connect(lambda: self.nudge_selected(+25, 0))
 
-        # timer simu
+        # timer simul&tion
         self.clock = QElapsedTimer()
         self.clock.start()
 
