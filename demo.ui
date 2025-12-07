@@ -14,84 +14,96 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QLabel" name="planeLabel">
-    <property name="geometry">
-     <rect>
-      <x>120</x>
-      <y>10</y>
-      <width>121</width>
-      <height>91</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="pixmap">
-     <pixmap resource="resources.qrc">:/img/plane.png</pixmap>
-    </property>
-    <property name="scaledContents">
-     <bool>true</bool>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignmentFlag::AlignCenter</set>
-    </property>
-   </widget>
-   <widget class="QWidget" name="widget" native="true">
-    <property name="geometry">
-     <rect>
-      <x>710</x>
-      <y>100</y>
-      <width>158</width>
-      <height>78</height>
-     </rect>
-    </property>
-    <widget class="QPushButton" name="btnUp">
-     <property name="geometry">
-      <rect>
-       <x>20</x>
-       <y>10</y>
-       <width>79</width>
-       <height>24</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>monter</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="btnDown">
-     <property name="geometry">
-      <rect>
-       <x>20</x>
-       <y>40</y>
-       <width>79</width>
-       <height>31</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>descendre</string>
-     </property>
-    </widget>
-   </widget>
-   <widget class="QWidget" name="horizontalLayoutWidget">
-    <property name="geometry">
-     <rect>
-      <x>690</x>
-      <y>180</y>
-      <width>160</width>
-      <height>80</height>
-     </rect>
-    </property>
-    <layout class="QHBoxLayout" name="horizontalLayout"/>
-   </widget>
-   <widget class="QGraphicsView" name="radarView">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>691</width>
+      <width>861</width>
       <height>671</height>
      </rect>
     </property>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QWidget" name="widget" native="true">
+       <widget class="QPushButton" name="btnUp">
+        <property name="geometry">
+         <rect>
+          <x>770</x>
+          <y>10</y>
+          <width>79</width>
+          <height>24</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>monter</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="btnMoveRight">
+        <property name="geometry">
+         <rect>
+          <x>780</x>
+          <y>120</y>
+          <width>79</width>
+          <height>24</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>right</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="btnMoveLeft">
+        <property name="geometry">
+         <rect>
+          <x>670</x>
+          <y>120</y>
+          <width>79</width>
+          <height>24</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>left</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="btnMoveDown">
+        <property name="geometry">
+         <rect>
+          <x>720</x>
+          <y>150</y>
+          <width>79</width>
+          <height>24</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>down</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="btnMoveUp">
+        <property name="geometry">
+         <rect>
+          <x>730</x>
+          <y>90</y>
+          <width>71</width>
+          <height>24</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>up</string>
+        </property>
+       </widget>
+       <widget class="QGraphicsView" name="radarView">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>661</width>
+          <height>661</height>
+         </rect>
+        </property>
+       </widget>
+      </widget>
+     </item>
+    </layout>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">

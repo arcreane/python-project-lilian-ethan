@@ -1,5 +1,5 @@
-# app.py — Radar circulaire + degrés + altitudes (couleur avion) + collisions + boutons altitude
-import sys, math, random
+# app.py — Radar circulaire + degrés + altitudes + collisions + déplacement manuel
+import sys, math, random, warnings
 from dataclasses import dataclass
 
 from PySide6.QtWidgets import (
@@ -32,9 +32,18 @@ def tint_pixmap(pixmap: QPixmap, color: QColor) -> QPixmap:
 
     painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
     painter.fillRect(tinted.rect(), color)
-
     painter.end()
     return tinted
+
+
+def safe_disconnect(signal):
+    """Disconnect sans warning si rien n'était connecté."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        try:
+            signal.disconnect()
+        except (TypeError, RuntimeError):
+            pass
 
 
 @dataclass
@@ -43,7 +52,7 @@ class PlaneState:
     y: float
     heading_deg: float
     speed: float
-    altitude: int   # 1,2,3
+    altitude: int   # 1, 2, 3
 
 
 class MainWindow(QMainWindow):
@@ -52,25 +61,28 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        # 1) récupérer la vue dans l'UI (radarView OU graphicsView)
-        self.view: QGraphicsView | None = getattr(self.ui, "radarView", None) or getattr(self.ui, "graphicsView", None)
+        # récupérer la QGraphicsView (radarView OU graphicsView)
+        self.view: QGraphicsView | None = (
+            getattr(self.ui, "radarView", None)
+            or getattr(self.ui, "graphicsView", None)
+        )
         if self.view is None:
             raise RuntimeError("Aucune QGraphicsView trouvée ('radarView' ou 'graphicsView').")
 
-        # 2) scène
+        # scène
         self.scene = QGraphicsScene(self)
         self.view.setScene(self.scene)
 
+        # valeurs provisoires (recalculées dans resizeEvent)
         self.W, self.H = 800, 600
         self.scene.setSceneRect(0, 0, self.W, self.H)
-
         self.cx, self.cy = self.W / 2, self.H / 2
-        self.R = min(self.W, self.H) * 0.42
+        self.R = min(self.W, self.H) * 0.45
 
-        # 3) radar
+        # radar initial
         self.draw_radar()
 
-        # 4) avions
+        # avions
         self.planes: list[QGraphicsPixmapItem] = []
         self.states: list[PlaneState] = []
         self.make_planes(n=6)
@@ -78,20 +90,43 @@ class MainWindow(QMainWindow):
         # sélection
         self.selected_index = None
 
-        # collisions (avec scale=0.05, 12–25 est pas mal)
+        # distance collision (avec scale=0.05)
         self.collision_dist = 18.0
 
-        # 5) connecter boutons altitude (doivent exister dans demo.ui)
+        # ---------------- Connexions boutons (SAFE) ----------------
+
+        # boutons altitude
         if hasattr(self.ui, "btnUp"):
+            safe_disconnect(self.ui.btnUp.clicked)
             self.ui.btnUp.clicked.connect(self.altitude_up)
+
         if hasattr(self.ui, "btnDown"):
+            safe_disconnect(self.ui.btnDown.clicked)
             self.ui.btnDown.clicked.connect(self.altitude_down)
 
-        # si tu as encore pushButton -> demo() dans Designer, ça évite l’erreur
-        # (sinon, ça ne fait rien)
-        # rien à connecter ici car ui_demo.py fait déjà la connexion
+        # boutons déplacement manuel (selon noms possibles)
+        btn_up = getattr(self.ui, "btnMoveUp", None) or getattr(self.ui, "up", None)
+        btn_down = getattr(self.ui, "btnMoveDown", None) or getattr(self.ui, "down", None)
+        btn_left = getattr(self.ui, "btnMoveLeft", None) or getattr(self.ui, "left", None)
+        btn_right = getattr(self.ui, "btnMoveRight", None) or getattr(self.ui, "right", None)
 
-        # 6) timer simu
+        if btn_up:
+            safe_disconnect(btn_up.clicked)
+            btn_up.clicked.connect(lambda: self.nudge_selected(0, -25))
+
+        if btn_down:
+            safe_disconnect(btn_down.clicked)
+            btn_down.clicked.connect(lambda: self.nudge_selected(0, +25))
+
+        if btn_left:
+            safe_disconnect(btn_left.clicked)
+            btn_left.clicked.connect(lambda: self.nudge_selected(-25, 0))
+
+        if btn_right:
+            safe_disconnect(btn_right.clicked)
+            btn_right.clicked.connect(lambda: self.nudge_selected(+25, 0))
+
+        # timer simu
         self.clock = QElapsedTimer()
         self.clock.start()
 
@@ -99,6 +134,31 @@ class MainWindow(QMainWindow):
         self.timer.setInterval(50)  # 20 Hz
         self.timer.timeout.connect(self.tick)
         self.timer.start()
+
+    # ---------- FIX RADAR TROP PETIT ----------
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+
+        # taille réelle après layout / affichage
+        self.W = self.view.viewport().width()
+        self.H = self.view.viewport().height()
+        self.scene.setSceneRect(0, 0, self.W, self.H)
+
+        self.cx, self.cy = self.W / 2, self.H / 2
+        self.R = min(self.W, self.H) * 0.45
+
+        # supprimer tout sauf les avions
+        for it in self.scene.items():
+            if not isinstance(it, QGraphicsPixmapItem):
+                self.scene.removeItem(it)
+
+        # redessiner radar aux bonnes dimensions
+        self.draw_radar()
+
+        # recaler visuellement les avions
+        for item, st in zip(self.planes, self.states):
+            b = item.boundingRect()
+            item.setPos(st.x - b.width()/2, st.y - b.height()/2)
 
     # ---------- RADAR ----------
     def draw_radar(self):
@@ -147,7 +207,6 @@ class MainWindow(QMainWindow):
             self.add_one_plane()
 
     def recolor_plane(self, idx: int):
-        """Re-teinte l'avion selon son altitude."""
         st = self.states[idx]
         base_pix = QPixmap(":/img/plane.png")
         tinted = tint_pixmap(base_pix, ALT_COLORS[st.altitude])
@@ -158,16 +217,15 @@ class MainWindow(QMainWindow):
         if base_pix.isNull():
             raise RuntimeError("Image :/img/plane.png introuvable dans resources.qrc")
 
-        # altitude aléatoire
         alt = random.choice([1, 2, 3])
         tinted_pix = tint_pixmap(base_pix, ALT_COLORS[alt])
 
         item = QGraphicsPixmapItem(tinted_pix)
-        item.setScale(0.05)  # <<< taille demandée
+        item.setScale(0.05)
         item.setTransformOriginPoint(item.boundingRect().center())
         self.scene.addItem(item)
 
-        # rendre sélectionnable par clic
+        # sélectionnable par clic
         item.setFlag(QGraphicsPixmapItem.ItemIsSelectable, True)
         item.setAcceptedMouseButtons(Qt.LeftButton)
 
@@ -183,15 +241,19 @@ class MainWindow(QMainWindow):
         self.planes.append(item)
         self.states.append(PlaneState(x=x, y=y, heading_deg=heading, speed=speed, altitude=alt))
 
+        b = item.boundingRect()
+        item.setPos(x - b.width()/2, y - b.height()/2)
+        item.setRotation(heading)
+
     # ---------- SELECTION ----------
     def update_selected_plane(self):
-        """Trouve l'avion sélectionné dans la scène."""
         self.selected_index = None
         for i, item in enumerate(self.planes):
             if item.isSelected():
                 self.selected_index = i
                 return
 
+    # ---------- ALTITUDE ----------
     def altitude_up(self):
         self.update_selected_plane()
         if self.selected_index is None:
@@ -216,6 +278,38 @@ class MainWindow(QMainWindow):
             self.recolor_plane(self.selected_index)
             self.statusBar().showMessage(f"Altitude avion -> {st.altitude}", 1000)
 
+    # ---------- DEPLACEMENT MANUEL ----------
+    def nudge_selected(self, dx: float, dy: float):
+        self.update_selected_plane()
+        if self.selected_index is None:
+            self.statusBar().showMessage("Sélectionne un avion d'abord", 1200)
+            return
+
+        st = self.states[self.selected_index]
+        item = self.planes[self.selected_index]
+
+        nx = st.x + dx
+        ny = st.y + dy
+
+        # garder dans le radar
+        ddx = nx - self.cx
+        ddy = ny - self.cy
+        dist = math.hypot(ddx, ddy)
+        if dist > self.R:
+            ddx /= dist
+            ddy /= dist
+            nx = self.cx + (self.R - 2) * ddx
+            ny = self.cy + (self.R - 2) * ddy
+
+        st.x, st.y = nx, ny
+
+        if dx != 0 or dy != 0:
+            st.heading_deg = (math.degrees(math.atan2(dy, dx))) % 360
+
+        b = item.boundingRect()
+        item.setPos(st.x - b.width()/2, st.y - b.height()/2)
+        item.setRotation(st.heading_deg)
+
     # ---------- COLLISIONS ----------
     def handle_collisions(self):
         to_remove = set()
@@ -230,7 +324,7 @@ class MainWindow(QMainWindow):
                 a = self.states[i]
                 b = self.states[j]
 
-                # collision seulement si même altitude
+                # pas de collision si altitudes différentes
                 if a.altitude != b.altitude:
                     continue
 
@@ -256,10 +350,8 @@ class MainWindow(QMainWindow):
         if dt <= 0:
             return
 
-        # mettre à jour la sélection
         self.update_selected_plane()
 
-        # mouvement
         for item, st in zip(self.planes, self.states):
             rad = math.radians(st.heading_deg)
             nx = st.x + st.speed * math.cos(rad) * dt
@@ -269,7 +361,6 @@ class MainWindow(QMainWindow):
             dy = ny - self.cy
             dist = math.hypot(dx, dy)
 
-            # rebond sur le bord du cercle
             if dist >= self.R:
                 nx_norm = dx / dist if dist != 0 else 1
                 ny_norm = dy / dist if dist != 0 else 0
@@ -292,13 +383,11 @@ class MainWindow(QMainWindow):
             item.setPos(st.x - b.width() / 2, st.y - b.height() / 2)
             item.setRotation(st.heading_deg)
 
-        # collisions après déplacement
         self.handle_collisions()
 
-    # ---------- SLOT BOUTON DESIGNER ----------
+    # ---------- SLOT DESIGNER (si resté dans .ui) ----------
     @Slot()
     def demo(self):
-        """Si pushButton.clicked -> MainWindow.demo() existe dans ui_demo.py."""
         self.add_one_plane()
         self.statusBar().showMessage("Nouvel avion ajouté", 1200)
 
