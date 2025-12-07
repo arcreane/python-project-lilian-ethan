@@ -1,19 +1,21 @@
 # plane_label.py
-import sys
+
 from pathlib import Path
-from PySide6.QtWidgets import QApplication, QLabel
+from PySide6.QtWidgets import QLabel
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt
 
-app = QApplication(sys.argv)
 
-img = QLabel()
-# si plane.png est ailleurs, mets le chemin complet : Path("img/plane.png")
-img_path = Path(__file__).with_name("plane.png")
-img.setPixmap(QPixmap(str(img_path)))
-img.setScaledContents(True)       # l’image s’adapte
-img.resize(50, 100)
-img.setAlignment(Qt.AlignCenter)
-img.show()
+class PlaneLabel(QLabel):
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
-sys.exit(app.exec())
+        # Chargement de l'image plane.png dans le même dossier
+        img_path = Path(__file__).with_name("plane.png")
+
+        pix = QPixmap(str(img_path))
+        self.setPixmap(pix)
+
+        self.setScaledContents(True)
+        self.resize(50, 100)
+        self.setAlignment(Qt.AlignCenter)
