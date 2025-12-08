@@ -6,101 +6,77 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>894</width>
-    <height>713</height>
+    <width>888</width>
+    <height>700</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QPushButton" name="bntUp">
-    <property name="geometry">
-     <rect>
-      <x>600</x>
-      <y>80</y>
-      <width>79</width>
-      <height>24</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Monter</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="btnMoveLeft">
-    <property name="geometry">
-     <rect>
-      <x>540</x>
-      <y>250</y>
-      <width>79</width>
-      <height>24</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>gauche</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="btnMoveRight">
-    <property name="geometry">
-     <rect>
-      <x>670</x>
-      <y>250</y>
-      <width>79</width>
-      <height>24</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>droite</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="btnDown">
-    <property name="geometry">
-     <rect>
-      <x>600</x>
-      <y>120</y>
-      <width>79</width>
-      <height>24</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>descendre</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="btnMoveUp">
-    <property name="geometry">
-     <rect>
-      <x>600</x>
-      <y>220</y>
-      <width>79</width>
-      <height>24</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>haut</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="btnMoveDown">
-    <property name="geometry">
-     <rect>
-      <x>600</x>
-      <y>280</y>
-      <width>79</width>
-      <height>24</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>bas</string>
-    </property>
-   </widget>
    <widget class="QGraphicsView" name="radarView">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>20</y>
-      <width>501</width>
-      <height>621</height>
+      <x>-10</x>
+      <y>-10</y>
+      <width>721</width>
+      <height>661</height>
      </rect>
     </property>
+   </widget>
+   <widget class="QWidget" name="gridLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>720</x>
+      <y>130</y>
+      <width>160</width>
+      <height>176</height>
+     </rect>
+    </property>
+    <layout class="QGridLayout" name="gridLayout">
+     <item row="5" column="0">
+      <widget class="QPushButton" name="btnMoveRight">
+       <property name="text">
+        <string>droite</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QPushButton" name="btnMoveDown">
+       <property name="text">
+        <string>bas</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QPushButton" name="btnDown">
+       <property name="text">
+        <string>descendre</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QPushButton" name="btnUp">
+       <property name="text">
+        <string>Monter</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QPushButton" name="btnMoveUp">
+       <property name="text">
+        <string>haut</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="QPushButton" name="btnMoveLeft">
+       <property name="text">
+        <string>gauche</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -108,7 +84,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>894</width>
+     <width>888</width>
      <height>33</height>
     </rect>
    </property>
