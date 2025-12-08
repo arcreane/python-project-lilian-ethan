@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/img">
         <file>plane.png</file>
+        <file>runway.png</file>   <!--  <<< ajoute cette ligne -->
     </qresource>
 </RCC>
